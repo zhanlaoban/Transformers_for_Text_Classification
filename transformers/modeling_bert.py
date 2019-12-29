@@ -24,6 +24,7 @@ import sys
 
 import torch
 from torch import nn
+import torch.nn.functional as F
 from torch.nn import CrossEntropyLoss, MSELoss
 
 from .modeling_utils import PreTrainedModel, prune_linear_layer
@@ -586,6 +587,8 @@ class BertModel(BertPreTrainedModel):
     Outputs: `Tuple` comprising various elements depending on the configuration (config) and inputs:
         **last_hidden_state**: ``torch.FloatTensor`` of shape ``(batch_size, sequence_length, hidden_size)``
             Sequence of hidden-states at the output of the last layer of the model.
+            模型在最后一层的输出——hidden-states序列.[batch_size, sequence_length, hidden_size]
+
         **pooler_output**: ``torch.FloatTensor`` of shape ``(batch_size, hidden_size)``
             Last layer hidden-state of the first token of the sequence (classification token)
             further processed by a Linear layer and a Tanh activation function. The Linear
@@ -593,6 +596,8 @@ class BertModel(BertPreTrainedModel):
             objective during Bert pretraining. This output is usually *not* a good summary
             of the semantic content of the input, you're often better with averaging or pooling
             the sequence of hidden-states for the whole input sequence.
+            即[CLS]向量
+
         **hidden_states**: (`optional`, returned when ``config.output_hidden_states=True``)
             list of ``torch.FloatTensor`` (one for the output of each layer + the output of the embeddings)
             of shape ``(batch_size, sequence_length, hidden_size)``:
@@ -1009,7 +1014,7 @@ class BertForSequenceClassification(BertPreTrainedModel):
         loss, logits = outputs[:2]
 
     """
-    def __init__(self, config):
+    def __init__(self, config, args):
         super(BertForSequenceClassification, self).__init__(config)
         self.num_labels = config.num_labels
 
@@ -1028,8 +1033,10 @@ class BertForSequenceClassification(BertPreTrainedModel):
                             position_ids=position_ids,
                             head_mask=head_mask,
                             inputs_embeds=inputs_embeds)
+        #outputs: `tuple`, [last_hidden_state, pooler_output]
 
         pooled_output = outputs[1]
+        #pooled_output.shape: torch.Size([16, 768]), [batch_size, hidden_size]
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classifier(pooled_output)
@@ -1080,18 +1087,25 @@ class BertForSequenceClassification_CNN(BertPreTrainedModel):
 
     """
     def __init__(self, config):
-        super(BertForSequenceClassification, self).__init__(config)
+        super(BertForSequenceClassification_CNN, self).__init__(config)
         self.num_labels = config.num_labels
+        args.filter_sizes = [int(size) for size in args.filter_sizes.split(',')]
 
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
+        self.convs = nn.ModuleList([nn.Conv2d(1, args.filter_num, (k, config.hidden_size)) for k in args.filter_sizes])
+        self.fc_cnn = nn.Linear(args.filter_num * len(args.filter_sizes), self.config.num_labels)
+
         self.classifier = nn.Linear(config.hidden_size, self.config.num_labels)
 
         self.init_weights()
 
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
-                position_ids=None, head_mask=None, inputs_embeds=None, labels=None):
+                position_ids=None, head_mask=None, inputs_embeds=None, labels=None, real_token_len=None):
 
+        
+        #print(input_ids.shape)  #torch.Size([2, 512])   [batch_size, max_seq_length]
+        
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
                             token_type_ids=token_type_ids,
@@ -1099,12 +1113,25 @@ class BertForSequenceClassification_CNN(BertPreTrainedModel):
                             head_mask=head_mask,
                             inputs_embeds=inputs_embeds)
 
-        pooled_output = outputs[1]
+        #outputs: `tuple`, [last_hidden_state, pooler_output]
 
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
+        last_hidden_state = outputs[0]
+        #last_hidden_state.shape: [batch_size, sequence_length, hidden_size]
+        
+        x = last_hidden_state.unsqueeze(1)
+        #x.shape: [batch_size, 1, sequence_length, hidden_size]
+        
+    
+        x = [F.relu(conv(x)).squeeze(3) for conv in self.convs]
+        x = [F.max_pool1d(item, item.size(2)).squeeze(2) for item in x]
+        x = torch.cat(x, 1)
+        x = self.dropout(x)
+        logits = self.fc_cnn(x)
 
-        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
+        #pooled_output = self.dropout(pooled_output)
+        #logits = self.classifier(pooled_output)
+
+        outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here. outputs的最后两个是hidden_states和attention
 
         if labels is not None:
             if self.num_labels == 1:
@@ -1149,13 +1176,19 @@ class BertForSequenceClassification_LSTM(BertPreTrainedModel):
         loss, logits = outputs[:2]
 
     """
-    def __init__(self, config):
-        super(BertForSequenceClassification, self).__init__(config)
+    def __init__(self, config, args):
+        super(BertForSequenceClassification_LSTM, self).__init__(config)
         self.num_labels = config.num_labels
 
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, self.config.num_labels)
+
+        self.lstm = []
+        for i in range(args.lstm_layers):
+            self.lstm.append( nn.LSTM(config.hidden_size if i==0 else args.lstm_hidden_size*4, args.lstm_hidden_size,num_layers=1,bidirectional=True,batch_first=True).cuda() )
+        self.lstm = nn.ModuleList(self.lstm)
+
+        self.classifier = nn.Linear(args.lstm_hidden_size*2, self.config.num_labels)
 
         self.init_weights()
 
@@ -1169,10 +1202,22 @@ class BertForSequenceClassification_LSTM(BertPreTrainedModel):
                             head_mask=head_mask,
                             inputs_embeds=inputs_embeds)
 
-        pooled_output = outputs[1]
+        last_hidden_state = outputs[0]
+        #last_hidden_state.shape: [batch_size, sequence_length, hidden_size]
 
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
+        for lstm in self.lstm:
+            try:
+                lstm.flatten_parameters() 
+            except:
+                pass
+            output, (h_n, c_n) = lstm(last_hidden_state)
+            #h_n.shape: [batch, num_layers*num_directions == 2, gru_hidden_size]    batch_size first
+            
+        x = h_n.permute(1,0,2).reshape(input_ids.size(0),-1).contiguous()
+        #x.shape: [batch, 2 * gru_hidden_size]
+
+        x = self.dropout(x)
+        logits = self.classifier(x)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
 
@@ -1186,7 +1231,7 @@ class BertForSequenceClassification_LSTM(BertPreTrainedModel):
                 loss = loss_fct(logits.view(-1, self.num_labels), labels.view(-1))
             outputs = (loss,) + outputs
 
-        return outputs  # (loss), logits, (hidden_states), (attentions)        
+        return outputs  # (loss), logits, (hidden_states), (attentions)     
 
 class BertForSequenceClassification_GRU(BertPreTrainedModel):
     r"""
@@ -1219,18 +1264,27 @@ class BertForSequenceClassification_GRU(BertPreTrainedModel):
         loss, logits = outputs[:2]
 
     """
-    def __init__(self, config):
-        super(BertForSequenceClassification, self).__init__(config)
+    def __init__(self, config, args):
+        super(BertForSequenceClassification_GRU, self).__init__(config)
         self.num_labels = config.num_labels
 
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
-        self.classifier = nn.Linear(config.hidden_size, self.config.num_labels)
+
+        self.gru = []
+        for i in range(args.gru_layers):
+            self.gru.append( nn.GRU(config.hidden_size if i==0 else args.gru_hidden_size*4, args.gru_hidden_size,num_layers=1,bidirectional=True,batch_first=True).cuda() )
+        self.gru = nn.ModuleList(self.gru)
+
+        self.classifier = nn.Linear(args.gru_hidden_size*2, self.config.num_labels)
+
 
         self.init_weights()
 
     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None,
                 position_ids=None, head_mask=None, inputs_embeds=None, labels=None):
+
+        #print(input_ids.shape)  #torch.Size([2, 512])   [batch_size, max_seq_length]
 
         outputs = self.bert(input_ids,
                             attention_mask=attention_mask,
@@ -1239,10 +1293,22 @@ class BertForSequenceClassification_GRU(BertPreTrainedModel):
                             head_mask=head_mask,
                             inputs_embeds=inputs_embeds)
 
-        pooled_output = outputs[1]
+        last_hidden_state = outputs[0]
+        #last_hidden_state.shape: [batch_size, sequence_length, hidden_size]
 
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classifier(pooled_output)
+        for gru in self.gru:
+            try:
+                gru.flatten_parameters() 
+            except:
+                pass
+            output, h_n = gru(last_hidden_state)
+            #h_n.shape: [batch, num_layers*num_directions == 2, gru_hidden_size]    batch_size first
+            
+        x = h_n.permute(1,0,2).reshape(input_ids.size(0),-1).contiguous()
+        #x.shape: [batch, 2 * gru_hidden_size]
+
+        x = self.dropout(x)
+        logits = self.classifier(x)
 
         outputs = (logits,) + outputs[2:]  # add hidden states and attention if they are here
 
@@ -1257,6 +1323,8 @@ class BertForSequenceClassification_GRU(BertPreTrainedModel):
             outputs = (loss,) + outputs
 
         return outputs  # (loss), logits, (hidden_states), (attentions)        
+
+
 
 
 @add_start_docstrings("""Bert Model with a multiple choice classification head on top (a linear layer on top of

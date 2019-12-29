@@ -16,16 +16,14 @@ logger = logging.getLogger(__name__)
 
 class InputExample(object):
     """
+    仅仅将文本转化为类
     A single training/test example for simple sequence classification.
 
     Args:
         guid: Unique id for the example.
-        text_a: string. The untokenized text of the first sequence. For single
-        sequence tasks, only this sequence must be specified.
-        text_b: (Optional) string. The untokenized text of the second sequence.
-        Only must be specified for sequence pair tasks.
-        label: (Optional) string. The label of the example. This should be
-        specified for train and dev examples, but not for test examples.
+        text_a: string. The untokenized text of the first sequence. For single sequence tasks, only this sequence must be specified.
+        text_b: (Optional) string. The untokenized text of the second sequence. Only must be specified for sequence pair tasks.
+        label: (Optional) string. The label of the example. This should be specified for train and dev examples, but not for test examples.
     """
     def __init__(self, guid, text_a, text_b=None, label=None):
         self.guid = guid
@@ -34,11 +32,12 @@ class InputExample(object):
         self.label = label
 
     def __repr__(self):
+        '''在打印InputExample或者对象时显示__repr__定义的信息'''
         return str(self.to_json_string())
 
     def to_dict(self):
         """Serializes this instance to a Python dictionary."""
-        output = copy.deepcopy(self.__dict__)
+        output = copy.deepcopy(self.__dict__)   #self.__dict__: 包含InputExample对象所有属性及其值的字典
         return output
 
     def to_json_string(self):
@@ -59,11 +58,12 @@ class InputFeatures(object):
         label: Label corresponding to the input
     """
 
-    def __init__(self, input_ids, attention_mask, token_type_ids, label):
+    def __init__(self, input_ids, attention_mask, token_type_ids, label, real_token_len):
         self.input_ids = input_ids
         self.attention_mask = attention_mask
         self.token_type_ids = token_type_ids
         self.label = label
+        self.real_token_len = real_token_len
 
     def __repr__(self):
         return str(self.to_json_string())
@@ -111,7 +111,11 @@ class DataProcessor(object):
 
     @classmethod
     def _read_csv(cls, input_file, quotechar=None):
-        """Reads a tab separated value file."""
+        """Reads a tab/comma separated value file.
+        
+        将数据以每行的形式转换为lines tuple
+        """
+
         with open(input_file, "r", encoding="utf-8-sig") as f:
             reader = csv.reader(f, delimiter=",", quotechar=quotechar)
             lines = []
@@ -159,7 +163,7 @@ def convert_examples_to_features(examples, tokenizer,
         is_tf_dataset = True
 
     if task is not None:
-        processor = glue_processors[task]()
+        processor = processors[task]()
         if label_list is None:
             label_list = processor.get_labels()
             logger.info("Using label list %s for task %s" % (label_list, task))
@@ -177,13 +181,17 @@ def convert_examples_to_features(examples, tokenizer,
             example = processor.get_example_from_tensor_dict(example)
             example = processor.tfds_map(example)
 
+        #inputs: dict
         inputs = tokenizer.encode_plus(
             example.text_a,
             example.text_b,
             add_special_tokens=True,
             max_length=max_length,
         )
+        #input_ids: 输入数据token在词汇表中的索引
+        #token_type_ids: 分段token索引，类似segment embedding
         input_ids, token_type_ids = inputs["input_ids"], inputs["token_type_ids"]
+        real_token_len = len(input_ids)
 
         # The mask has 1 for real tokens and 0 for padding tokens. Only real
         # tokens are attended to.
@@ -205,15 +213,17 @@ def convert_examples_to_features(examples, tokenizer,
         assert len(token_type_ids) == max_length, "Error with input length {} vs {}".format(len(token_type_ids), max_length)
 
         if output_mode == "classification":
-            label = label_map[example.label]
+            label = label_map[example.label]    #label => index
         elif output_mode == "regression":
             label = float(example.label)
         else:
             raise KeyError(output_mode)
 
+
         if ex_index < 5:
             logger.info("*** Example ***")
             logger.info("guid: %s" % (example.guid))
+            logger.info("real_token_len: %s" % (real_token_len))
             logger.info("input_ids: %s" % " ".join([str(x) for x in input_ids]))
             logger.info("attention_mask: %s" % " ".join([str(x) for x in attention_mask]))
             logger.info("token_type_ids: %s" % " ".join([str(x) for x in token_type_ids]))
@@ -223,7 +233,8 @@ def convert_examples_to_features(examples, tokenizer,
                 InputFeatures(input_ids=input_ids,
                               attention_mask=attention_mask,
                               token_type_ids=token_type_ids,
-                              label=label))
+                              label=label,
+                              real_token_len=real_token_len))
 
     if is_tf_available() and is_tf_dataset:
         def gen():
@@ -273,7 +284,7 @@ class THUNewsProcessor(DataProcessor):
         return ["体育", "财经", "房产", "家居", "教育"]
 
     def _create_examples(self, lines, set_type):
-        """Creates examples for the training and dev sets."""
+        """Creates examples for the training/dev/test sets."""
         examples = []
         for (i, line) in enumerate(lines):
             if i == 0:
@@ -283,8 +294,9 @@ class THUNewsProcessor(DataProcessor):
                 text_a = line[0]
                 label = '体育'
             else:
-                text_a = line[1]
                 label = line[0]
+                text_a = line[1]
+                #如有两段文本, 也可以设置text_b
             examples.append(InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
 
         return examples
