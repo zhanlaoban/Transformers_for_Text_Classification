@@ -63,6 +63,17 @@ bash run_classifier.sh
 
 
 
+# Environment
+
+- 1 2080Ti, 12GB RAM
+- Python: 3.6.5
+- PyTorch: 1.3.1
+
+- TensorFlow: 1.14.0(仅为了支持TensorBoard，无其他作用)
+- Numpy: 1.14.6
+
+
+
 # Performance
 
 数据集: THUNews/5_5000
