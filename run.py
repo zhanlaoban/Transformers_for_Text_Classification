@@ -512,6 +512,10 @@ def main():
 
     args = parser.parse_args()
 
+    #cnn
+    args.filter_sizes = [int(size) for size in str(args.filter_sizes).split(',')]
+
+
     #是否覆盖输出目录
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir) and args.do_train and not args.overwrite_output_dir:
         raise ValueError("Output directory ({}) already exists and is not empty. Use --overwrite_output_dir to overcome.".format(args.output_dir))
@@ -604,7 +608,7 @@ def main():
         torch.save(args, os.path.join(args.output_dir, 'training_args.bin'))
 
         # Load a trained model and vocabulary that you have fine-tuned
-        model = model_class.from_pretrained(args.output_dir)
+        model = model_class.from_pretrained(args.output_dir, args=args)
         tokenizer = tokenizer_class.from_pretrained(args.output_dir)
         model.to(args.device)
 
@@ -623,7 +627,7 @@ def main():
             global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
             prefix = checkpoint.split('/')[-1] if checkpoint.find('checkpoint') != -1 else ""
             
-            model = model_class.from_pretrained(checkpoint)
+            model = model_class.from_pretrained(checkpoint, args=args)
             model.to(args.device)
             result = evaluate(args, model, tokenizer, prefix=prefix)
             result = dict((k + '_{}'.format(global_step), v) for k, v in result.items())
@@ -645,7 +649,7 @@ def main():
             global_step = checkpoint.split('-')[-1] if len(checkpoints) > 1 else ""
             prefix = checkpoint.split('/')[-1] if checkpoint.find('checkpoint') != -1 else ""
             
-            model = model_class.from_pretrained(checkpoint)
+            model = model_class.from_pretrained(checkpoint, args=args)
             model.to(args.device)
             logger.info("Predict...")
             result = predict(args, model, tokenizer, prefix=prefix)

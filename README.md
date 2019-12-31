@@ -6,25 +6,36 @@
 
 
 
+# Highlights
+
+- 支持transformer模型后接各种特征提取器
+- 支持测试集预测代码
+- 精简原始transformers代码，使之更适合文本分类任务
+- 优化logging终端输出，使之输出内容更加合理
+
+
+
+# Support 
+
+**model_type：**
+
+- [x] bert
+- [x] bert+cnn
+- [x] bert+lstm
+- [x] bert+gru
+- [x] xlnet
+- [ ] xlnet+cnn
+- [ ] xlnet+lstm
+- [ ] xlnet+gru
+
+
+
 # Content
 
 - dataset：存放数据集
 - pretrained_models：存放预训练模型
 - transformers：transformers文件夹
 - results：存放训练结果
-
-
-
-# Support
-
-- [x] bert+fc
-- [x] bert+cnn
-- [x] bert+lstm
-- [x] bert+gru
-- [ ] xlnet
-- [ ] xlnet+cnn
-- [ ] xlnet+lstm
-- [ ] xlnet+gru
 
 
 
@@ -36,7 +47,7 @@
 
 如，BERT后接FC全连接层，则直接设置`model_type=bert`；BERT后接CNN卷积层，则设置`model_type=bert_cnn`. 
 
-在本README的`Performance`的model_type列中附本项目中各个预训练模型支持的`model_type`。
+在本README的`Support`中列出了本项目中各个预训练模型支持的`model_type`。
 
 最后，在终端直接运行shell文件即可，如：
 
@@ -54,14 +65,20 @@ bash run_classifier.sh
 
 # Performance
 
-| model_type | F1   | remark       |
-| ---------- | ---- | ------------ |
-| bert       |      | BERT接FC层   |
-| bert_cnn   |      | BERT接CNN层  |
-| bert_lstm  |      | BERT接LSTM层 |
-| bert_gru   |      | BERT接GRU层  |
-| xlnet      |      |              |
-| albert     |      |              |
+数据集: THUNews/5_5000
+
+epoch:1
+
+train_steps: 5000 
+
+| model_type     | dev set best F1 and Acc    | remark                                         |
+| -------------- | -------------------------- | ---------------------------------------------- |
+| bert_base      | 0.9308869881728941, 0.9324 | BERT接FC层, batch_size 8, learning_rate 2e-5   |
+| bert_base+cnn  | 0.9136314735833212, 0.9156 | BERT接CNN层, batch_size 8, learning_rate 2e-5  |
+| bert_base+lstm | 0.9369254464106703, 0.9372 | BERT接LSTM层, batch_size 8, learning_rate 2e-5 |
+| bert_base+gru  | 0.9379539112313108, 0.938  | BERT接GRU层, batch_size 8, learning_rate 2e-5  |
+| xlnet_large    | 0.9530066512880131, 0.954  | XLNet接FC层, batch_size 2, learning_rate 2e-5  |
+| albert         |                            |                                                |
 
 
 

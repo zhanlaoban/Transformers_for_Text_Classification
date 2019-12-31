@@ -1086,10 +1086,10 @@ class BertForSequenceClassification_CNN(BertPreTrainedModel):
         loss, logits = outputs[:2]
 
     """
-    def __init__(self, config):
+    def __init__(self, config, args):
         super(BertForSequenceClassification_CNN, self).__init__(config)
         self.num_labels = config.num_labels
-        args.filter_sizes = [int(size) for size in args.filter_sizes.split(',')]
+        
 
         self.bert = BertModel(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob)

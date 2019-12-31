@@ -1013,7 +1013,7 @@ class XLNetForSequenceClassification(XLNetPreTrainedModel):
         loss, logits = outputs[:2]
 
     """
-    def __init__(self, config):
+    def __init__(self, config, args):
         super(XLNetForSequenceClassification, self).__init__(config)
         self.num_labels = config.num_labels
 
