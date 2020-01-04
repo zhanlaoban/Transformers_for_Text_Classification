@@ -28,9 +28,10 @@ from transformers import (BertConfig,BertTokenizer,
                           BertForSequenceClassification_GRU,
                           XLNetConfig,XLNetTokenizer,
                           XLNetForSequenceClassification,
+                          XLNetForSequenceClassification_LSTM,
+                          XLNetForSequenceClassification_GRU,
                           AlbertConfig,AlbertTokenizer,
-                          AlbertForSequenceClassification
-                                )
+                          AlbertForSequenceClassification)
 
 from transformers import AdamW, get_linear_schedule_with_warmup
 
@@ -49,6 +50,8 @@ MODEL_CLASSES = {
     'bert_lstm': (BertConfig, BertForSequenceClassification_LSTM, BertTokenizer),
     'bert_gru': (BertConfig, BertForSequenceClassification_GRU, BertTokenizer),
     'xlnet': (XLNetConfig, XLNetForSequenceClassification, XLNetTokenizer),
+    'xlnet_lstm': (XLNetConfig, XLNetForSequenceClassification_LSTM, XLNetTokenizer),
+    'xlnet_gru': (XLNetConfig, XLNetForSequenceClassification_GRU, XLNetTokenizer),
     'albert': (AlbertConfig, AlbertForSequenceClassification, AlbertTokenizer)
 }
 

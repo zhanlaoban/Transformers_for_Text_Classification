@@ -4,10 +4,10 @@ TASK_NAME="THUNews"
 
 python run.py \
   --task_name=$TASK_NAME \
-  --model_type=xlnet \
+  --model_type=xlnet_gru \
   --model_name_or_path ./pretrained_models/xlnet_mid \
   --data_dir ./dataset/THUNews/5_5000 \
-  --output_dir ./results/THUNews/xlnet_mid \
+  --output_dir ./results/THUNews/xlnet_mid_gru \
   --do_train \
   --do_eval \
   --do_predict \

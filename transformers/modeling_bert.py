@@ -1145,6 +1145,7 @@ class BertForSequenceClassification_CNN(BertPreTrainedModel):
 
         return outputs  # (loss), logits, (hidden_states), (attentions)
 
+
 class BertForSequenceClassification_LSTM(BertPreTrainedModel):
     r"""
         **labels**: (`optional`) ``torch.LongTensor`` of shape ``(batch_size,)``:
@@ -1232,6 +1233,7 @@ class BertForSequenceClassification_LSTM(BertPreTrainedModel):
             outputs = (loss,) + outputs
 
         return outputs  # (loss), logits, (hidden_states), (attentions)     
+
 
 class BertForSequenceClassification_GRU(BertPreTrainedModel):
     r"""

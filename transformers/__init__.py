@@ -96,7 +96,9 @@ if is_torch_available():
                                 CTRLLMHeadModel,
                                 CTRL_PRETRAINED_MODEL_ARCHIVE_MAP)
     from .modeling_xlnet import (XLNetPreTrainedModel, XLNetModel, XLNetLMHeadModel,
-                                XLNetForSequenceClassification, XLNetForTokenClassification,
+                                XLNetForSequenceClassification, XLNetForSequenceClassification_LSTM,
+                                XLNetForSequenceClassification_GRU,
+                                XLNetForTokenClassification,
                                 XLNetForMultipleChoice, XLNetForQuestionAnsweringSimple,
                                 XLNetForQuestionAnswering, load_tf_weights_in_xlnet,
                                 XLNET_PRETRAINED_MODEL_ARCHIVE_MAP)

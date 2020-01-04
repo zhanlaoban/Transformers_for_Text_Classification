@@ -25,8 +25,9 @@
 - [x] bert+gru
 - [x] xlnet
 - [ ] xlnet+cnn
-- [ ] xlnet+lstm
-- [ ] xlnet+gru
+- [x] xlnet+lstm
+- [x] xlnet+gru
+- [ ] albert
 
 
 
@@ -55,6 +56,10 @@
 bash run_classifier.sh
 ```
 
+**注**：**在中文RoBERTa、ERNIE、BERT_wwm这三种预训练语言模型中，均使用BERT的model_type进行加载。**
+
+
+
 ## 2. 使用自定义数据集
 
 1. 在`dataset`文件夹里存放自定义的数据集文件夹，如`TestData`.
@@ -65,7 +70,7 @@ bash run_classifier.sh
 
 # Environment
 
-- 1 2080Ti, 12GB RAM
+- one 2080Ti, 12GB RAM
 - Python: 3.6.5
 - PyTorch: 1.3.1
 
@@ -82,14 +87,17 @@ epoch:1
 
 train_steps: 5000 
 
-| model_type     | dev set best F1 and Acc    | remark                                         |
-| -------------- | -------------------------- | ---------------------------------------------- |
-| bert_base      | 0.9308869881728941, 0.9324 | BERT接FC层, batch_size 8, learning_rate 2e-5   |
-| bert_base+cnn  | 0.9136314735833212, 0.9156 | BERT接CNN层, batch_size 8, learning_rate 2e-5  |
-| bert_base+lstm | 0.9369254464106703, 0.9372 | BERT接LSTM层, batch_size 8, learning_rate 2e-5 |
-| bert_base+gru  | 0.9379539112313108, 0.938  | BERT接GRU层, batch_size 8, learning_rate 2e-5  |
-| xlnet_large    | 0.9530066512880131, 0.954  | XLNet接FC层, batch_size 2, learning_rate 2e-5  |
-| albert         |                            |                                                |
+| model              | dev set best F1 and Acc    | remark                                          |
+| ------------------ | -------------------------- | ----------------------------------------------- |
+| bert_base          | 0.9308869881728941, 0.9324 | BERT接FC层, batch_size 8, learning_rate 2e-5    |
+| bert_base+cnn      | 0.9136314735833212, 0.9156 | BERT接CNN层, batch_size 8, learning_rate 2e-5   |
+| bert_base+lstm     | 0.9369254464106703, 0.9372 | BERT接LSTM层, batch_size 8, learning_rate 2e-5  |
+| bert_base+gru      | 0.9379539112313108, 0.938  | BERT接GRU层, batch_size 8, learning_rate 2e-5   |
+| roberta_large      |                            | RoBERTa接FC层, batch_size 2, learning_rate 2e-5 |
+| xlnet_large        | 0.9530066512880131, 0.954  | XLNet接FC层, batch_size 2, learning_rate 2e-5   |
+| xlnet_mid+lstm     | 0.9269927348553552, 0.9304 | XLNet接LSTM层, batch_size 2, learning_rate 2e-5 |
+| xlnet_mid+gru      | 0.9494631023945569, 0.9508 | XLNet接GRU层, batch_size 2, learning_rate 2e-5  |
+| albert_xlarge_183k |                            |                                                 |
 
 
 
