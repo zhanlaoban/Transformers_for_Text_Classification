@@ -33,6 +33,9 @@ from transformers import (BertConfig,BertTokenizer,
                           AlbertConfig,AlbertTokenizer,
                           AlbertForSequenceClassification)
 
+#from transformers.configuration_albert import BertConfig as AlbertConfig
+#from transformers.tokenization_albert import BertTokenizer as AlbertTokenizer
+
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from metrics import acc_and_f1
@@ -53,6 +56,7 @@ MODEL_CLASSES = {
     'xlnet_lstm': (XLNetConfig, XLNetForSequenceClassification_LSTM, XLNetTokenizer),
     'xlnet_gru': (XLNetConfig, XLNetForSequenceClassification_GRU, XLNetTokenizer),
     'albert': (AlbertConfig, AlbertForSequenceClassification, AlbertTokenizer)
+    #'albert': (BertConfig, AlbertForSequenceClassification, BertTokenizer)
 }
 
 
@@ -129,7 +133,7 @@ def train(args, train_dataset, model, tokenizer):
                       'attention_mask': batch[1],
                       'labels':         batch[3]}
             if args.model_type != 'distilbert':
-                inputs['token_type_ids'] = batch[2] if args.model_type in ['bert', 'xlnet'] else None  # XLM, DistilBERT and RoBERTa don't use segment_ids
+                inputs['token_type_ids'] = batch[2] if args.model_type in ['bert', 'xlnet', 'albert'] else None  # XLM, DistilBERT and RoBERTa don't use segment_ids
             
             if args.model_type in ['bert_cnn']:
                 #inputs['real_token_len'] = batch[4]
@@ -238,7 +242,7 @@ def evaluate(args, model, tokenizer, prefix=""):
                       'attention_mask': batch[1],
                       'labels':         batch[3]}
             if args.model_type != 'distilbert':
-                inputs['token_type_ids'] = batch[2] if args.model_type in ['bert', 'xlnet'] else None  # XLM, DistilBERT and RoBERTa don't use segment_ids
+                inputs['token_type_ids'] = batch[2] if args.model_type in ['bert', 'xlnet', 'albert'] else None  # XLM, DistilBERT and RoBERTa don't use segment_ids
             outputs = model(**inputs)
             tmp_eval_loss, logits = outputs[:2]
 

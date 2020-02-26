@@ -20,13 +20,13 @@
 **model_type：**
 
 - [x] bert
-- [x] bert+cnn
-- [x] bert+lstm
-- [x] bert+gru
+- [x] bert_cnn
+- [x] bert_lstm
+- [x] bert_gru
 - [x] xlnet
-- [ ] xlnet+cnn
-- [x] xlnet+lstm
-- [x] xlnet+gru
+- [ ] xlnet_cnn
+- [x] xlnet_lstm
+- [x] xlnet_gru
 - [ ] albert
 
 
@@ -94,7 +94,7 @@ train_steps: 5000
 | bert_base+lstm     | 0.9369254464106703, 0.9372 | BERT接LSTM层, batch_size 8, learning_rate 2e-5  |
 | bert_base+gru      | 0.9379539112313108, 0.938  | BERT接GRU层, batch_size 8, learning_rate 2e-5   |
 | roberta_large      |                            | RoBERTa接FC层, batch_size 2, learning_rate 2e-5 |
-| xlnet_large        | 0.9530066512880131, 0.954  | XLNet接FC层, batch_size 2, learning_rate 2e-5   |
+| xlnet_mid          | 0.9530066512880131, 0.954  | XLNet接FC层, batch_size 2, learning_rate 2e-5   |
 | xlnet_mid+lstm     | 0.9269927348553552, 0.9304 | XLNet接LSTM层, batch_size 2, learning_rate 2e-5 |
 | xlnet_mid+gru      | 0.9494631023945569, 0.9508 | XLNet接GRU层, batch_size 2, learning_rate 2e-5  |
 | albert_xlarge_183k |                            |                                                 |

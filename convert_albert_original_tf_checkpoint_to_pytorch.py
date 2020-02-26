@@ -66,8 +66,8 @@ if __name__ == "__main__":
                                      args.pytorch_dump_path)
  
 '''
-python transformers/convert_albert_original_tf_checkpoint_to_pytorch.py \
-    --tf_checkpoint_path=/home/zhan/zyy/Github/Transformers_for_Text_Classification/pretrained_models/ALBERT/google/albert_base\
-    --albert_config_file=/home/zhan/zyy/Github/Transformers_for_Text_Classification/pretrained_models/ALBERT/google/albert_base\
+python convert_albert_original_tf_checkpoint_to_pytorch.py \
+    --tf_checkpoint_path=/home/zhan/zyy/Github/Transformers_for_Text_Classification/pretrained_models/ALBERT/google/albert_base \
+    --albert_config_file=/home/zhan/zyy/Github/Transformers_for_Text_Classification/pretrained_models/ALBERT/google/albert_base \
     --pytorch_dump_path=/home/zhan/zyy/Github/Transformers_for_Text_Classification/pretrained_models/ALBERT/google/albert_base/pytorch_model.bin
 '''

@@ -4,18 +4,18 @@ TASK_NAME="THUNews"
 
 python run.py \
   --task_name=$TASK_NAME \
-  --model_type=xlnet_gru \
-  --model_name_or_path ./pretrained_models/xlnet_mid \
+  --model_type=albert \
+  --model_name_or_path ./pretrained_models/albert_xlarge_183k \
   --data_dir ./dataset/THUNews/5_5000 \
-  --output_dir ./results/THUNews/xlnet_mid_gru \
+  --output_dir ./results/THUNews/albert \
   --do_train \
   --do_eval \
   --do_predict \
   --do_lower_case \
   --max_seq_length=512 \
-  --per_gpu_train_batch_size=2 \
+  --per_gpu_train_batch_size=1 \
   --per_gpu_eval_batch_size=16 \
-  --gradient_accumulation_steps=1 \
+  --gradient_accumulation_steps=2 \
   --learning_rate=2e-5 \
   --num_train_epochs=1.0 \
   --logging_steps=14923 \
